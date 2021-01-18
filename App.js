@@ -43,12 +43,13 @@ const NavigationDrawerStructure = (props) => {
   );
 };
 
-function firstScreenStack({navigation}) {
+function firstScreenStack({navigation, route}) {
   return (
     <Stack.Navigator initialRouteName="FirstPage">
       <Stack.Screen
         name="FirstPage"
         component={FirstPage}
+        initialParams = {{mobot: route.params.mobot}}
         options={{
           title: 'DuRaRaRa Mobot', //Set Header Title
           headerLeft: () => (
@@ -101,30 +102,82 @@ function secondScreenStack({navigation}) {
   );
 }
 
-function App() {
-  return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        drawerContentOptions={{
-          activeTintColor: '#e91e63',
-          //activeBackgroundColor: '#aaaaaa',
-          //backgroundColor: '#3e3e44',
-          itemStyle: {marginVertical: 5},
-        }}
-        drawerContent={(props) => <CustomSidebarMenu {...props} />}>
-        <Drawer.Screen
-          name="FirstPage"
-          options={{drawerLabel: 'Chatroom'}}
-          component={firstScreenStack}
-        />
-        <Drawer.Screen
-          name="SecondPage"
-          options={{drawerLabel: 'Mobot Setting'}}
-          component={secondScreenStack}
-        />
-      </Drawer.Navigator>
-    </NavigationContainer>
-  );
+class Mobot {
+  constructor(){
+    this.webview = null;
+    this.chatloc = null;
+  }
+
+  setWebview(ref){
+    this.webview = ref;
+  }
+
+  setChatloc(loc){
+    this.chatloc = loc;
+    alert(loc)
+  }
+
+  handleMessage(data){
+    alert(data);
+    // do something
+  }
+
+  handleLoadEnd = (syntheticEvent) => {
+    const { nativeEvent } = syntheticEvent;
+    if (nativeEvent.url.includes('lounge')) {
+      this.setChatloc("lounge");
+      //this.mobot.webview.injectJavaScript(`
+      //  alert("L ${nativeEvent.url}");
+      //  true;
+      //  `);
+    }
+
+    if (nativeEvent.url.includes('room')) {
+      this.setChatloc("room");
+      //this.mobot.webview.injectJavaScript(`
+      //  alert("R ${nativeEvent.url}");
+      //  true;
+      //`);
+      // window.ReactNativeWebView.postMessage
+    }
+  };
+
+  handleMessage = (event) => {
+    alert(event.nativeEvent.data)
+  };
+
 }
 
-export default App;
+export default class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.mobot = new Mobot();
+  }
+
+  render() {
+    return (
+      <NavigationContainer>
+        <Drawer.Navigator
+          drawerContentOptions={{
+            activeTintColor: '#e91e63',
+            //activeBackgroundColor: '#aaaaaa',
+            //backgroundColor: '#3e3e44',
+            itemStyle: {marginVertical: 5},
+          }}
+          drawerContent={(props) => <CustomSidebarMenu {...props} />}>
+          <Drawer.Screen
+            name="FirstPage"
+            options={{drawerLabel: 'Chatroom'}}
+            component={firstScreenStack}
+            initialParams = {{ mobot: this.mobot }}
+          />
+          <Drawer.Screen
+            name="SecondPage"
+            options={{drawerLabel: 'Mobot Setting'}}
+            component={secondScreenStack}
+          />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    );
+  };
+}

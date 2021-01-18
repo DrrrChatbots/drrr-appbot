@@ -5,47 +5,19 @@ import * as React from 'react';
 import {Button, View, Text, SafeAreaView} from 'react-native';
 import { WebView } from 'react-native-webview';
 
-export default class FirstPage extends React.Component {
-  webview = null;
-  chatloc = "lounge";
-  render() {
-    return (
-      <WebView
-        ref={(ref) => (this.webview = ref)}
-        source={{ uri: 'https://drrr.com' }}
-        originWhitelist={['https://drrr.com', 'https://drrr.com/*']}
-        style={{ marginTop: 0 }}
-        onLoadEnd={this.handleLoadEnd}
-        onMessage={this.handleMessage}
-      />
-    );
-  }
-
-  ref = (bind) => { bind(this); }
-
-  handleLoadEnd = (syntheticEvent) => {
-    const { nativeEvent } = syntheticEvent;
-    if (nativeEvent.url.includes('lounge')) {
-      this.chatloc = "lounge";
-      this.webview.injectJavaScript(`
-        alert("L ${nativeEvent.url}");
-        true;
-        `);
-    }
-
-    if (nativeEvent.url.includes('room')) {
-      this.chatloc = "room";
-      this.webview.injectJavaScript(`
-        alert("R ${nativeEvent.url}");
-        true;
-      `);
-      // window.ReactNativeWebView.postMessage
-    }
-  };
-
-  handleMessage = (event) => {
-    alert(event.nativeEvent.data);
-  };
+//export default class FirstPage extends React.Component {
+//
+const FirstPage = ({navigation, route}) => {
+  return (
+    <WebView
+      ref={route.params.mobot.setWebview}
+      source={{ uri: 'https://drrr.com' }}
+      originWhitelist={['https://drrr.com', 'https://drrr.com/*']}
+      style={{ marginTop: 0 }}
+      onLoadEnd={route.params.mobot.handleLoadEnd}
+      onMessage={route.params.mobot.handleMessage}
+    />
+  );
 
   //return (
     //<SafeAreaView style={{flex: 1}}>
@@ -84,4 +56,4 @@ export default class FirstPage extends React.Component {
   //);
 };
 
-//export default FirstPage;
+export default FirstPage;
