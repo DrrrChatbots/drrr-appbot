@@ -148,9 +148,42 @@ try{
 catch (err) {
   alert(JSON.stringify(err));
 }
-window.ReactNativeWebView.postMessage(JSON.stringify(handle_talks($('#talks')[0])));
+
+data = {
+  profile: profile,
+  event: handle_talks($('#talks')[0])
+}
+window.ReactNativeWebView.postMessage(JSON.stringify(data));
 true;
 `;
+
+//data={'leave': 'leave'}
+//data={'message': msg}
+//data={'message': msg, 'url': url}
+//data={'message': msg, 'to': uid}
+//data={'new_host': uid}
+//data={'kick': uid}
+//data={'ban': uid}
+//data={'report_and_ban_user': uid}
+//data={'unban': uid}
+//data={'music': 'music', 'name': name, 'url': url}
+//data={'dj_mode': str(is_dj_mode).lower()}
+//data={'room_name': str(name)}
+//data={'room_description': str(name)}
+actionScript = (cmd) => `
+  $.ajax({
+    type: "POST",
+    url: 'https://drrr.com/room/?ajax=1&api=json',
+    data: ${JSON.stringify(cmd)},
+    dataType: 'json',
+    success: function(data){
+      //if(succ) succ(data);
+    },
+    error: function(jxhr){
+      //if(fail) fail(jxhr);
+    }
+  });
+`
 
 function firstScreenStack({navigation, route}) {
   return (
@@ -177,7 +210,7 @@ function firstScreenStack({navigation, route}) {
   );
 }
 
-function secondScreenStack({navigation}) {
+function secondScreenStack({navigation, route}) {
   return (
     <Stack.Navigator
       initialRouteName="SecondPage"
@@ -196,6 +229,7 @@ function secondScreenStack({navigation}) {
       <Stack.Screen
         name="SecondPage"
         component={SecondPage}
+        initialParams = {{mobot: route.params.mobot}}
         options={{
           title: 'DuRaRaRa Mobot Setting', //Set Header Title
         }}
@@ -213,12 +247,36 @@ function secondScreenStack({navigation}) {
 
 class Mobot {
   constructor(){
+    this.keepID = null;
     this.webview = null;
     this.chatloc = null;
+    this.profile = null;
     this.setWebview = this.setWebview.bind(this);
     this.setChatloc = this.setChatloc.bind(this);
     this.handleLoadEnd = this.handleLoadEnd.bind(this);
     this.handleMessage = this.handleMessage.bind(this);
+    this.switchKeep = this.switchKeep.bind(this);
+    this.toggleKeep = null;
+  }
+
+  switchKeep(val){
+    if(!this.profile || this.chatloc !== "room"){
+      alert("you must in a chatroom");
+      return false;
+    }
+    if(val){
+      this.keepID = setInterval(function(){
+        this.webview.injectJavaScript(
+        actionScript({
+          'message': 'keep',
+          //'to': this.profile.id
+        }));
+      }.bind(this), 10000);
+    }
+    else{
+      clearInterval(this.keepID);
+    }
+    return val;
   }
 
   setWebview(ref){
@@ -236,7 +294,7 @@ class Mobot {
       this.setChatloc("lounge");
       this.webview.injectJavaScript(`
         //alert("L ${nativeEvent.url}");
-        window.ReactNativeWebView.postMessage(JSON.stringify(profile))
+        //window.ReactNativeWebView.postMessage(JSON.stringify(profile))
         true;
         `);
     }
@@ -244,18 +302,16 @@ class Mobot {
     if (nativeEvent.url.includes('room')) {
       this.setChatloc("room");
       this.webview.injectJavaScript(roomscript);
-      //this.webview.injectJavaScript(`
-      //  //alert("R ${nativeEvent.url}");
-      //  alert("done");
-      //  //window.ReactNativeWebView.postMessage(JSON.stringify(profile))
-      //  //window.ReactNativeWebView.postMessage(JSON.stringify(room.talks[0].id))
-      //  true;
-      //`);
     }
   };
 
   handleMessage = (event) => {
-    alert(event.nativeEvent.data)
+    const data = JSON.parse(event.nativeEvent.data)
+    if(data['profile']){
+      this.profile = data['profile'];
+      //alert(JSON.stringify(this.profile));
+    }
+    // handle
   };
 
 }
@@ -287,6 +343,7 @@ export default class App extends React.Component {
             name="SecondPage"
             options={{drawerLabel: 'Mobot Setting'}}
             component={secondScreenStack}
+            initialParams = {{ mobot: this.mobot }}
           />
         </Drawer.Navigator>
       </NavigationContainer>
